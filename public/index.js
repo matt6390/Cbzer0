@@ -24,29 +24,52 @@ var SongUploadPage = {
   },
   created: function() {},
   methods: {
-    uploadSong: function() {
-      var item = document.getElementById("newSong").files[0];
-      var storageRef = firebase.storage().ref().child('songs/' + item.name);
+    saveUrl: function(url) {
+      var params = {
+        storage_url: url,
+        user_id: 1,
+        name: this.name
+      };
 
-      // Begins upload process
-      storageRef = storageRef.put(item);
-      // Monitors upload progress
-      storageRef.on('state_changed', function(snapshot) {
-        var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        console.log('Upload is ' + progress + '% done');
-      }.bind(this), function(error) {
-        // for unsuccessful uploads
-      }.bind(this), function() {
-        // completed upload
-        var song = storageRef.snapshot.ref.getDownloadURL().then(function(downloadUrl) {
-          console.log("Available for download at " + downloadUrl);
-          this.downloadUrl = downloadUrl;
-          // create a function that will then take this URL, and create a SONG reference in the postgresql database
-        }.bind(this));
+      axios.post("/songs", params).then(function(response) {
+        console.log(response.data);
+      }.bind(this)).catch(function(errors) {
+        this.errors = errors.response.data.error;
+        console.log(errors.response.data.error);
       }.bind(this));
+      console.log(url);
+    },
 
+    uploadSong: function() {
+      if (this.name) {
+        // find the file a user adds
+        var item = document.getElementById("newSong").files[0];
+        // create reference so that the item can be uploaded
+        var storageRef = firebase.storage().ref().child('songs/' + item.name);
+        // Begins upload process
+        storageRef = storageRef.put(item);
+        // Monitors upload progress
+        storageRef.on('state_changed', function(snapshot) {
+          var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log('Upload is ' + progress + '% done');
+        }.bind(this), function(error) {
+          // for unsuccessful uploads
+        }.bind(this), function() {
+          // completed upload
+          var song = storageRef.snapshot.ref.getDownloadURL().then(function(downloadUrl) {
+            // console.log("Available for download at " + downloadUrl);
+            this.downloadUrl = downloadUrl;
+            // create a function that will then take this URL, and create a SONG reference in the postgresql database
+            this.saveUrl(downloadUrl);
 
-      console.log(item);
+          }.bind(this));
+        }.bind(this));
+      } else {
+        this.errors = [];
+        this.errors = {error: "No Name Entered, Try Again"};
+        console.log("No Name");
+      }
+
     }
   },
   computed: {}

@@ -21,7 +21,7 @@ class SongsController < ApplicationController
       # render json: {message: 'song created successfully'}, status: :created
       render 'show.json.jbuilder'
     else
-      render json: {errors: @song.errors.full_messages}, status: :bad_request
+      render json: {error: @song.errors.full_messages}, status: :bad_request
     end
   end
 
